@@ -1,0 +1,223 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>tibjms-ssl-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>tibjms-ssl-demo</name>
+    <description>Demo project for Spring Boot with Tibco JMS and SSL</description>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <spring-boot.version>2.7.6</spring-boot.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tibco</groupId>
+            <artifactId>tibjms</artifactId>
+            <version>YOUR_TIBCO_VERSION</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+========================
+application.properties
+
+# Tibco JMS Server with SSL
+jms.server.broker-url=ssl://server-host:port
+jms.server.username=yourUsername
+jms.server.password=yourPassword
+
+# SSL Properties
+jms.server.ssl.trust-store=classpath:truststore.jks
+jms.server.ssl.trust-store-password=yourTrustStorePassword
+jms.server.ssl.key-store=classpath:keystore.jks
+jms.server.ssl.key-store-password=yourKeyStorePassword
+
+
+=======================
+JmsConfig
+
+package com.example.tibjmsssl.config;
+
+import com.tibco.tibjms.TibjmsConnectionFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
+
+import javax.jms.ConnectionFactory;
+import java.util.Properties;
+
+@Configuration
+public class JmsConfig {
+
+    @Value("${jms.server.broker-url}")
+    private String brokerUrl;
+
+    @Value("${jms.server.username}")
+    private String username;
+
+    @Value("${jms.server.password}")
+    private String password;
+
+    @Value("${jms.server.ssl.trust-store}")
+    private String trustStorePath;
+
+    @Value("${jms.server.ssl.trust-store-password}")
+    private String trustStorePassword;
+
+    @Value("${jms.server.ssl.key-store}")
+    private String keyStorePath;
+
+    @Value("${jms.server.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    @Bean
+    public ConnectionFactory jmsConnectionFactory() throws Exception {
+        TibjmsConnectionFactory factory = new TibjmsConnectionFactory();
+        factory.setServerUrl(brokerUrl);
+        factory.setUserName(username);
+        factory.setPassword(password);
+
+        Properties sslProperties = new Properties();
+        sslProperties.setProperty("javax.net.ssl.trustStore", trustStorePath);
+        sslProperties.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+        sslProperties.setProperty("javax.net.ssl.keyStore", keyStorePath);
+        sslProperties.setProperty("javax.net.ssl.keyStorePassword", keyStorePassword);
+
+        factory.setSslProperties(sslProperties);
+        
+        return factory;
+    }
+
+    @Bean
+    public JmsTemplate jmsTemplate() throws Exception {
+        JmsTemplate jmsTemplate = new JmsTemplate();
+        jmsTemplate.setConnectionFactory(jmsConnectionFactory());
+        return jmsTemplate;
+    }
+
+    @Bean
+    public JmsListenerContainerFactory<?> jmsListenerContainerFactory() throws Exception {
+        SimpleJmsListenerContainerFactory factory = new SimpleJmsListenerContainerFactory();
+        factory.setConnectionFactory(jmsConnectionFactory());
+        factory.setConcurrency("1-1");
+        return factory;
+    }
+}
+
+
+
+==================
+
+MessageProducerService
+
+
+package com.example.tibjmsssl.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MessageProducerService {
+
+    @Autowired
+    private JmsTemplate jmsTemplate;
+
+    public void sendMessage(String message) {
+        jmsTemplate.convertAndSend("queue.name", message);
+    }
+}
+
+
+
+=========================
+
+MessageConsumerService
+
+
+
+package com.example.tibjmsssl.service;
+
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MessageConsumerService {
+
+    @JmsListener(destination = "queue.name", containerFactory = "jmsListenerContainerFactory")
+    public void onMessage(String message) {
+        System.out.println("Received message: " + message);
+    }
+}
+
+
+======================
+MessageController
+
+package com.example.tibjmsssl.controller;
+
+import com.example.tibjmsssl.service.MessageProducerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class MessageController {
+
+    @Autowired
+    private MessageProducerService messageProducerService;
+
+    @GetMapping("/send")
+    public String sendMessage(@RequestParam String message) {
+        try {
+            messageProducerService.sendMessage(message);
+            return "Message sent";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Failed to send message";
+        }
+    }
+}
+===========
+
+mvn clean package
+mvn spring-boot:run
+
+
+=========
+test Your Application
+To send a message, navigate to http://localhost:8080/send?message=Hello in your browser 
+
+
