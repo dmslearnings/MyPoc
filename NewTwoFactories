@@ -1,0 +1,272 @@
+To configure a Spring Boot application to use TibjmsConnectionFactory for connecting to two different Tibco JMS servers, you need to set up two separate connection factories and associated JMS templates. Each connection factory will be configured to connect to a different server.
+
+Here's a step-by-step guide on how to achieve this:
+
+1. Set Up Your Spring Boot Project
+Make sure you have a Spring Boot project set up. You can use Spring Initializr or set up a Maven or Gradle project manually. Below is a sample Maven pom.xml:
+
+pom.xml:
+
+xml
+Copy code
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>tibjms-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>tibjms-demo</name>
+    <description>Demo project for Spring Boot with Tibco JMS</description>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <spring-boot.version>2.7.6</spring-boot.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tibco</groupId>
+            <artifactId>tibjms</artifactId>
+            <version>YOUR_TIBCO_VERSION</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+Replace YOUR_TIBCO_VERSION with the version of the Tibco JMS library you're using.
+
+2. Configure Application Properties
+Define properties for the two Tibco JMS servers in application.properties.
+
+src/main/resources/application.properties:
+
+properties
+Copy code
+# Tibco JMS Server 1
+jms.server1.broker-url=tcp://server1-host:port
+jms.server1.username=yourUsername
+jms.server1.password=yourPassword
+
+# Tibco JMS Server 2
+jms.server2.broker-url=tcp://server2-host:port
+jms.server2.username=yourUsername
+jms.server2.password=yourPassword
+3. Create JMS Configuration Class
+Set up TibjmsConnectionFactory beans for both servers and configure JMS templates.
+
+src/main/java/com/example/tibjmsdemo/config/JmsConfig.java:
+
+java
+Copy code
+package com.example.tibjmsdemo.config;
+
+import com.tibco.tibjms.TibjmsConnectionFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
+
+import javax.jms.ConnectionFactory;
+
+@Configuration
+public class JmsConfig {
+
+    @Value("${jms.server1.broker-url}")
+    private String server1BrokerUrl;
+
+    @Value("${jms.server1.username}")
+    private String server1Username;
+
+    @Value("${jms.server1.password}")
+    private String server1Password;
+
+    @Value("${jms.server2.broker-url}")
+    private String server2BrokerUrl;
+
+    @Value("${jms.server2.username}")
+    private String server2Username;
+
+    @Value("${jms.server2.password}")
+    private String server2Password;
+
+    @Bean
+    public ConnectionFactory server1ConnectionFactory() {
+        TibjmsConnectionFactory factory = new TibjmsConnectionFactory();
+        factory.setServerUrl(server1BrokerUrl);
+        factory.setUserName(server1Username);
+        factory.setPassword(server1Password);
+        return factory;
+    }
+
+    @Bean
+    public ConnectionFactory server2ConnectionFactory() {
+        TibjmsConnectionFactory factory = new TibjmsConnectionFactory();
+        factory.setServerUrl(server2BrokerUrl);
+        factory.setUserName(server2Username);
+        factory.setPassword(server2Password);
+        return factory;
+    }
+
+    @Bean
+    public JmsTemplate server1JmsTemplate() {
+        JmsTemplate jmsTemplate = new JmsTemplate();
+        jmsTemplate.setConnectionFactory(server1ConnectionFactory());
+        return jmsTemplate;
+    }
+
+    @Bean
+    public JmsTemplate server2JmsTemplate() {
+        JmsTemplate jmsTemplate = new JmsTemplate();
+        jmsTemplate.setConnectionFactory(server2ConnectionFactory());
+        return jmsTemplate;
+    }
+
+    @Bean
+    public JmsListenerContainerFactory<?> server1JmsListenerContainerFactory() {
+        SimpleJmsListenerContainerFactory factory = new SimpleJmsListenerContainerFactory();
+        factory.setConnectionFactory(server1ConnectionFactory());
+        factory.setConcurrency("1-1");
+        return factory;
+    }
+
+    @Bean
+    public JmsListenerContainerFactory<?> server2JmsListenerContainerFactory() {
+        SimpleJmsListenerContainerFactory factory = new SimpleJmsListenerContainerFactory();
+        factory.setConnectionFactory(server2ConnectionFactory());
+        factory.setConcurrency("1-1");
+        return factory;
+    }
+}
+4. Create Services for Producing and Consuming Messages
+Define services to send and receive messages using the configured JMS templates.
+
+src/main/java/com/example/tibjmsdemo/service/MessageProducerService.java:
+
+java
+Copy code
+package com.example.tibjmsdemo.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MessageProducerService {
+
+    @Autowired
+    private JmsTemplate server1JmsTemplate;
+
+    @Autowired
+    private JmsTemplate server2JmsTemplate;
+
+    public void sendMessageToServer1(String message) {
+        server1JmsTemplate.convertAndSend("queue.server1", message);
+    }
+
+    public void sendMessageToServer2(String message) {
+        server2JmsTemplate.convertAndSend("queue.server2", message);
+    }
+}
+src/main/java/com/example/tibjmsdemo/service/MessageConsumerService.java:
+
+java
+Copy code
+package com.example.tibjmsdemo.service;
+
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MessageConsumerService {
+
+    @JmsListener(destination = "queue.server1", containerFactory = "server1JmsListenerContainerFactory")
+    public void onMessageFromServer1(String message) {
+        System.out.println("Received message from Server 1: " + message);
+    }
+
+    @JmsListener(destination = "queue.server2", containerFactory = "server2JmsListenerContainerFactory")
+    public void onMessageFromServer2(String message) {
+        System.out.println("Received message from Server 2: " + message);
+    }
+}
+5. Create a REST Controller (Optional)
+Expose REST endpoints to send messages to the JMS servers.
+
+src/main/java/com/example/tibjmsdemo/controller/MessageController.java:
+
+java
+Copy code
+package com.example.tibjmsdemo.controller;
+
+import com.example.tibjmsdemo.service.MessageProducerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class MessageController {
+
+    @Autowired
+    private MessageProducerService messageProducerService;
+
+    @GetMapping("/sendToServer1")
+    public String sendToServer1(@RequestParam String message) {
+        try {
+            messageProducerService.sendMessageToServer1(message);
+            return "Message sent to Server 1";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Failed to send message to Server 1";
+        }
+    }
+
+    @GetMapping("/sendToServer2")
+    public String sendToServer2(@RequestParam String message) {
+        try {
+            messageProducerService.sendMessageToServer2(message);
+            return "Message sent to Server 2";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Failed to send message to Server 2";
+        }
+    }
+}
+6. Run Your Application
+Build and run your Spring Boot application using Maven:
+
+bash
+Copy code
+mvn clean package
+mvn spring-boot:run
+7. Test Your Application
+To send messages, navigate to the appropriate URLs:
+http://localhost:8080/sendToServer1?message=HelloServer1
+http://localhost:8080/sendToServer2?message=HelloServer2
+This setup will allow your Spring Boot application to interact with two Tibco JMS servers, sending and receiving messages using separate TibjmsConnectionFactory instances for each serve
