@@ -18,3 +18,4 @@ public class EmsController {
         return "Message sent: " + message;
     }
 }
+//http://localhost:8080/send?message=HelloWorld
