@@ -1,0 +1,31 @@
+Principles for Microservice Design:
+event-driven, availability , loose-coupling, and single responsibility, interface segregation, deployability
+
+Define the boundaries of your microservices.  ,, Design for resiliency.
+Use lightweight communication protocols.,, Use asynchronous communication between services.
+Design your services around business capabilities, not technical capabilities.
+========================
+1Single concern: microservice should do one thing and one thing onl
+2Discrete :  all logic and data relevant to a microservice
+3Transportable : A transportable microservice can be moved from one runtime environment to another with little effort
+
+4Carries its own data:
+A microservice should have its own data storage mechanism that is isolated from all other microservices
+
+5Inherently ephemeral:
+The principle that a microservice is ephemeral means that it can be created, destroyed, and replenished on-demand on a target easily, quickly, and with no side effects
+================
+ 
+Apache Kafka is a distributed stream-processing platform designed to handle high-volume real-time data. It ensures data durability and resilience through data replication across multiple Kafka brokers. On the other hand, IBM MQ, formerly known as WebSphere MQ, is a messaging solution for enterprise applications
+Latency and throughput: MQ is optimized for low latency and high throughput within a single data center, while Kafka is designed for high throughput and low latency across multiple data centers
+Kafka  handling high volume, real-time data streams, MQ shines in ensuring robust security and guaranteed message delivery
+Apache Kafka is massively scalable because it allows data to be distributed across multiple servers
+The network thread uses zero-copy transfer to move data directly from the underlying file to the socket buffer. This is one of the reasons why Kafka is fast
+ By default, this limit is 1MB
+========
+The objective of Kogito is rule engine for business processes and decisions into your own domain-specific cloud-native set of services. 
+When you use Kogito, you are building a cloud-native application as a set of independent domain-specific services to achieve some business value.
+
+Semantic monitoring in microservices is a type of monitoring that uses business-level metrics to track the performance and health of individual microservices and their interactions. It focuses on monitoring metrics that are meaningful to business stakeholders, such as response time and error rates, rather than technical metrics like CPU usage or network latency
+
+What are the three types of tests for microservices? Unit Testing , Contract Testing, Integration Testing 

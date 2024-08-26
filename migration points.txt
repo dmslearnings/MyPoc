@@ -1,0 +1,50 @@
+
+install 17
+
+pipeline
+local run
+environment setup
+pom update
+
+testing manual vs automation
+
+
+spring
+spring boot
+hibernate
+tomcat 
+external libs if any 
+java
+maven
+MQ libs
+tibco ems
+test libs
+jdbc libs
+oracle libs
+repository upgrade - docker file infra,cicd setup
+partner dependancy for java new version 17 - rest, soup, mq
+outdated libs if any
+third-party libraries 
+hope hardcode dependancy nside service
+
+Dependency should be in place in respostory
+partners depedancy - servers dependacy
+rollback plan- 8 will be there
+
+Team expert level on cloud
+
+LTS - long term Support
+==================================
+ 
+
+infra setup - 2
+cicd -4
+eva config setup
+------------------------
+appln pkg setup - 2
+deployment and sanity = 3
+qa testing = 2
+------------------------------------
+performance 
+
+
