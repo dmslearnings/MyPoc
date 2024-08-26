@@ -1,0 +1,93 @@
+
+install 17
+
+pipeline
+local run
+environment setup
+pom update
+
+testing manual vs automation
+
+
+spring
+spring boot
+hibernate
+tomcat 
+external libs if any 
+java
+maven
+MQ libs
+tibco ems
+test libs
+jdbc libs
+oracle libs
+repository upgrade - docker file infra,cicd setup
+partner dependancy for java new version 17 - rest, soup, mq
+outdated libs if any
+third-party libraries 
+hope hardcode dependancy nside service
+
+Dependency should be in place in respostory
+partners depedancy - servers dependacy
+rollback plan- 8 will be there
+
+Team expert level on cloud
+
+LTS - long term Support
+==================================
+ 
+
+infra setup - 2
+cicd -4
+eva config setup
+------------------------
+appln pkg setup - 2
+deployment and sanity = 3
+qa testing = 2
+------------------------------------
+performance 
+
+
+==================================================================================
+Migrating Spring Boot services from Java 8 to Java 17 involves a number of steps and considerations. Java 17 brings numerous enhancements and changes that can impact your application, so a careful approach is necessary. Here are some tips to ensure a smooth migration:
+
+**1. Understand New Java Features and Changes
+Review New Features: Familiarize yourself with the new features and changes introduced in Java 9 through Java 17 (e.g., module system, records, sealed classes, pattern matching).
+Identify Deprecated or Removed Features: Check for any features or APIs that have been deprecated or removed in newer Java versions and plan for replacements.
+**2. Review and Update Dependencies
+Update Dependencies: Ensure that all third-party libraries and Spring Boot dependencies are compatible with Java 17. This might involve updating to newer versions of these libraries.
+Check for Known Issues: Consult the release notes and documentation of dependencies for any known issues or required changes for Java 17 compatibility.
+**3. Refactor Code
+Use New Language Features: Take advantage of new language features like records, pattern matching, and enhanced switch statements where appropriate to improve code readability and maintainability.
+Address Deprecated APIs: Replace any deprecated or removed APIs with their recommended alternatives.
+**4. Test Thoroughly
+Run Unit and Integration Tests: Ensure that you have comprehensive unit and integration tests in place. Run these tests to identify any issues that arise due to the migration.
+Perform Regression Testing: Verify that the migration has not introduced any regressions or unexpected behavior in the application.
+**5. Update Configuration and Build Tools
+Review Build Scripts: Update your build tools (e.g., Maven or Gradle) and ensure that the configuration is compatible with Java 17. This might involve updating plugins or build settings.
+Update CI/CD Pipelines: Modify your CI/CD pipelines to use Java 17 and ensure that all build, test, and deployment processes are functioning correctly.
+**6. Check for JVM Options and Performance
+Review JVM Options: Check and update JVM options for Java 17, as some options from Java 8 may be deprecated or removed.
+Monitor Performance: Monitor the performance of your application after migration. Java 17 may introduce changes that could affect performance, so keep an eye on metrics and logs.
+**7. Address Security and Compatibility Issues
+Review Security Updates: Java 17 includes various security enhancements. Ensure that your application is configured to take advantage of these improvements.
+Test Compatibility: Ensure that your application behaves correctly with Java 17’s security features and that no compatibility issues arise.
+**8. Upgrade Spring Boot Version
+Check Compatibility: Ensure that the version of Spring Boot you are using is compatible with Java 17. Spring Boot 2.5.x and later versions support Java 17.
+Upgrade Spring Boot: If necessary, upgrade to a newer version of Spring Boot that supports Java 17. Follow the Spring Boot migration guide for any specific changes required.
+**9. Utilize New Java APIs
+Explore New APIs: Take advantage of new Java APIs introduced in Java 9 through Java 17, such as the java.util.concurrent enhancements, java.time improvements, and new utility methods.
+Leverage Performance Improvements: Use Java 17’s performance improvements and optimizations to enhance your application’s efficiency.
+**10. Document Changes
+Update Documentation: Update any internal documentation, code comments, and README files to reflect changes made during the migration.
+Communicate Changes: Inform your team and stakeholders about the changes and improvements made during the migration.
+**11. Gradual Migration Approach
+Consider a Phased Approach: If you have a large number of services, consider migrating them in phases rather than all at once. This allows for easier troubleshooting and minimizes the risk of widespread issues.
+**12. Leverage Tools
+Use Migration Tools: Utilize tools such as the jdeps tool to analyze dependencies and identify potential issues.
+Static Analysis Tools: Use static analysis tools to detect code issues related to the migration, such as deprecated API usage.
+**13. Check Module System
+Review Modules: If your application or dependencies use the Java Module System introduced in Java 9, review module definitions and configurations for compatibility with Java 17.
+**14. Plan for Long-Term Support
+Consider Long-Term Support: Java 17 is an LTS release, so plan your migration with long-term support in mind, ensuring that your application benefits from extended updates and support.
+By following these tips, you can ensure a smoother transition from Java 8 to Java 17 for your Spring Boot services, taking full advantage of the new features and improvements while maintaining the stability and performance of your application.
