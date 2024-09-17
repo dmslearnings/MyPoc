@@ -1,0 +1,100 @@
+ Deprecated Features in Java 9-16
+javax.annotation.processing.AbstractProcessor and javax.annotation.processing.Processor:
+
+These annotations have been deprecated, and you should use the new javax.annotation.processing package or newer alternatives.
+Thread.stop(), Thread.suspend(), Thread.resume():
+
+These methods were deprecated in Java 9 due to their unsafe behavior. They are fully removed in later versions.
+Applet API:
+
+The Applet API has been deprecated and eventually removed in Java 9. The API is considered outdated and not used in modern Java development.
+NIO 2.0:
+
+The older java.nio.file.Files methods for file.walk and file.walkFileTree are deprecated, with newer file I/O APIs recommended.
+Security Manager:
+
+The Security Manager and its associated APIs have been deprecated in Java 17, with a plan to remove it in future releases.
+RMI Activation:
+
+Remote Method Invocation (RMI) Activation has been deprecated and is removed in newer versions. Alternatives are recommended.
+2. Removed Features in Java 9-17
+Java EE and CORBA modules:
+
+These modules were removed starting from Java 11. They include various APIs for Java EE (Enterprise Edition) and CORBA (Common Object Request Broker Architecture).
+javax.xml.bind (JAXB), javax.xml.ws (JAX-WS), and javax.xml.soap:
+
+These Java EE APIs were removed from the JDK in Java 11. They are now part of separate modules or libraries.
+Security Manager:
+
+As mentioned, the Security Manager is deprecated and targeted for removal.
+RMI Activation:
+
+RMI Activation has been removed since Java 15.
+Applets:
+
+Applets have been fully removed from the JDK since Java 9.
+JDK Tools:
+
+Some JDK tools and utilities have been deprecated and removed, such as javaws and javapackager.
+Recommendations:
+Update Dependencies: Ensure that any third-party libraries or frameworks you use are updated to be compatible with the latest Java versions.
+Refactor Code: Refactor any deprecated API usage to use recommended alternatives. For example, replace Thread.stop() with more appropriate concurrency mechanisms.
+Test Thoroughly: Given the substantial changes between Java 8 and Java 17, thorough testing is crucial to ensure your application behaves as expected.
+
+======================================================
+
+Removed Features and APIs
+Java 9
+javax.annotation.processing:
+
+The javax.annotation.processing package has been deprecated and removed in favor of more modern annotation processing approaches.
+Thread.stop(), Thread.suspend(), Thread.resume():
+
+These methods were deprecated for removal due to their unsafe behavior and were removed in later versions.
+Java EE Modules:
+
+Modules such as javax.xml.bind, javax.xml.ws, javax.xml.soap, and javax.annotation were removed. These were part of the Java EE specification and are now available as separate libraries.
+Applets:
+
+The Applet API, used for Java applets in web browsers, was deprecated in Java 9 and removed in later versions.
+Java 10
+The -XX:+UseG1GC Garbage Collector Option:
+This option was removed in favor of more modern garbage collection options.
+Java 11
+Java EE and CORBA Modules:
+
+In addition to what was removed in Java 9, Java EE modules like javax.annotation, javax.xml.bind, and others were removed from the JDK in favor of external libraries.
+JDK Packager:
+
+The javapackager tool, used for packaging Java applications, was removed. The recommended replacement is jpackage, introduced in Java 14.
+Nashorn JavaScript Engine:
+
+The Nashorn JavaScript engine was deprecated in Java 11 and removed in Java 15.
+Java 12-14
+Legacy Socket API:
+Various older network APIs were deprecated and removed. The Socket and ServerSocket APIs were updated to use the newer APIs and methods.
+Java 15
+RMI Activation:
+
+The RMI Activation system was deprecated and then removed.
+@Deprecated(forRemoval = true) Annotation:
+
+Added to indicate features that are planned for removal in future versions.
+Java 16
+Security Manager:
+The Security Manager API was deprecated for removal in Java 17. Although not yet removed in Java 16, it's planned for future removal.
+Java 17
+Security Manager:
+
+The Security Manager is deprecated for removal and will be completely removed in a future version.
+``Java EE Modules`:
+
+Java EE modules like javax.xml.bind, javax.xml.ws, and javax.xml.soap were completely removed starting with Java 11, but their removal impacts applications moving from Java 8.
+Recommendations for Migration
+Update Dependencies: Replace any usage of removed or deprecated APIs with their modern equivalents or external libraries.
+
+Refactor Code: Address the removal of older APIs like Applet, RMI Activation, and deprecated methods like Thread.stop() by refactoring your code.
+
+Test Thoroughly: Ensure that your codebase is thoroughly tested to catch any issues arising from the removal of features.
+
+Consult Migration Guides: Use the official Oracle and OpenJDK migration guides to understand the implications of these changes.
