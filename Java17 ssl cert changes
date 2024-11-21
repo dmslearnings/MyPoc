@@ -21,6 +21,11 @@ Copy code
 -Djdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1
 Or, in your Java code:
 
+============
+
+-DDisableHostVerification=true
+java -DDisableHostVerification=true -jar your-application.jar
+
 java
 Copy code
 System.setProperty("jdk.tls.client.protocols", "TLSv1.2,TLSv1.1,TLSv1");
