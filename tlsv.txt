@@ -1,0 +1,454 @@
+To ensure that your Java microservice only uses **TLSv1.3** and above while disabling older protocols like **TLSv1.2**, you can configure the Java microservice either through **Java properties** (via `.properties` files) or **XML configurations** (depending on your framework or server). Here's how you can do it:
+
+### Option 1: **Using Java System Properties (via `.properties` or programmatically)**
+
+#### 1. **Disabling TLSv1.2 and Enabling TLSv1.3 via System Properties**
+
+You can configure the system properties in the Java microservice to ensure only **TLSv1.3** and above is used.
+
+1. **Set the system property `https.protocols`** to ensure only **TLSv1.3** and above are used. This can be done in two ways:
+
+   - **Via `.properties` file** (e.g., in your microservice's config file):
+     - If your application reads properties from a `.properties` file, you can include this property:
+     
+       **`application.properties`** (if you are using Spring Boot or similar frameworks):
+       ```properties
+       https.protocols=TLSv1.3
+       ```
+
+   - **Via JVM arguments** when running the microservice:
+     You can pass this as a system property when starting your Java application:
+     ```bash
+     java -Dhttps.protocols=TLSv1.3 -jar your-application.jar
+     ```
+
+2. **Disabling TLSv1.2 Programmatically**:
+   If your microservice requires programmatic control over the TLS configuration (for example, in Spring Boot or any custom Java application), you can disable **TLSv1.2** via Java code, ensuring that only **TLSv1.3** is used:
+
+   ```java
+   import javax.net.ssl.SSLContext;
+   import java.security.NoSuchAlgorithmException;
+   import java.security.KeyManagementException;
+
+   public class TLSConfiguration {
+       public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException {
+           // Disable TLSv1.2 and enable TLSv1.3
+           System.setProperty("https.protocols", "TLSv1.3");
+
+           // Create an SSLContext for TLSv1.3
+           SSLContext context = SSLContext.getInstance("TLSv1.3");
+
+           // Initialize the SSLContext (with defaults for KeyManagers and TrustManagers)
+           context.init(null, null, new java.security.SecureRandom());
+
+           // Set the default SSLContext to the one created for TLSv1.3
+           SSLContext.setDefault(context);
+
+           System.out.println("TLSv1.3 is now enabled and TLSv1.2 is disabled.");
+       }
+   }
+   ```
+
+### Option 2: **Using XML Configuration (For Java Application Servers)**
+
+If your Java microservice is hosted on a server like **Tomcat**, **Jetty**, or **Wildfly**, you will need to adjust the server's **SSL/TLS configuration** to disable older protocols and enable only **TLSv1.3**.
+
+#### 1. **Tomcat Configuration (`server.xml`)**
+
+For **Tomcat** (or other servlet containers), you can disable **TLSv1.2** and enable only **TLSv1.3** by modifying the `server.xml` file.
+
+1. **Locate your `server.xml` file** (for Tomcat, typically under `$CATALINA_HOME/conf/server.xml`).
+
+2. **Configure the `<Connector>` element** to disable **TLSv1.2** and enable **TLSv1.3**:
+   
+   Example configuration in `server.xml`:
+   ```xml
+   <Connector 
+       port="8443" 
+       protocol="org.apache.coyote.http11.Http11NioProtocol" 
+       maxThreads="150" 
+       scheme="https" 
+       secure="true" 
+       SSLEnabled="true"
+       sslProtocol="TLS" 
+       sslEnabledProtocols="TLSv1.3"
+       keystoreFile="/path/to/keystore"
+       keystorePass="yourKeystorePassword"
+       clientAuth="false"
+       sslProtocol="TLS"
+       ciphers="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256" />
+   ```
+
+   - The key part here is `sslEnabledProtocols="TLSv1.3"`, which ensures **only TLSv1.3** is used.
+   - The `ciphers` attribute specifies which ciphers should be used by the server for **TLSv1.3**.
+
+3. **Restart Tomcat**: After making these changes, restart Tomcat for them to take effect.
+
+#### 2. **Jetty Configuration (`jetty-ssl.xml`)**
+
+For **Jetty**, you can modify the `jetty-ssl.xml` configuration file to disable **TLSv1.2** and enable **TLSv1.3**.
+
+1. **Locate the `jetty-ssl.xml` file** (typically under `$JETTY_HOME/etc/`).
+
+2. **Modify the SSLContextFactory** to specify the protocols and ciphers:
+   
+   Example configuration:
+   ```xml
+   <Call name="setIncludeProtocols">
+     <Arg>
+       <Array type="java.lang.String">
+         <Item>TLSv1.3</Item>
+       </Array>
+     </Arg>
+   </Call>
+
+   <Call name="setExcludeProtocols">
+     <Arg>
+       <Array type="java.lang.String">
+         <Item>TLSv1.2</Item>
+       </Array>
+     </Arg>
+   </Call>
+   ```
+
+   - The `setIncludeProtocols` call ensures only **TLSv1.3** is used.
+   - The `setExcludeProtocols` ensures **TLSv1.2** is disabled.
+
+3. **Restart Jetty**: After modifying the `jetty-ssl.xml` file, restart Jetty to apply the changes.
+
+#### 3. **Wildfly Configuration (`standalone.xml`)**
+
+For **Wildfly**, the SSL configuration is typically found in the `standalone.xml` or `domain.xml` file.
+
+1. **Locate the `standalone.xml` file** (typically under `$WILDFLY_HOME/standalone/configuration/`).
+
+2. **Modify the `<security-realms>` section to disable TLSv1.2 and enable TLSv1.3**:
+   
+   Example:
+   ```xml
+   <server-identities>
+       <ssl protocol="TLS" cipher-suite="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256">
+           <keystore path="keystore.jks" password="yourPassword"/>
+       </ssl>
+   </server-identities>
+   
+   <https-listener name="default-https" socket-binding="https" security-realm="ApplicationRealm">
+       <ssl protocol="TLSv1.3"/>
+   </https-listener>
+   ```
+
+   - The `protocol="TLSv1.3"` ensures that only **TLSv1.3** is enabled.
+   - You can also explicitly specify the supported ciphers (e.g., **TLS_AES_128_GCM_SHA256** for **TLSv1.3**).
+
+3. **Restart Wildfly**: After modifying the configuration, restart Wildfly for the changes to take effect.
+
+### Conclusion
+
+To ensure your Java microservice only uses **TLSv1.3** and above while disabling older protocols like **TLSv1.2**, you can:
+
+- Use **Java system properties** (via `.properties` files or JVM arguments) to control the protocols.
+- Modify your **server's SSL/TLS configuration** (e.g., `server.xml` for Tomcat, `jetty-ssl.xml` for Jetty, or `standalone.xml` for Wildfly) to enforce the desired protocol.
+
+Make sure to restart your microservice after applying the changes for them to take effect.
+
+
+=========
+
+To disable **TLSv1.2** and enable **TLSv1.3 and higher** in Java applications, you'll need to modify both the configuration of your JVM and the application code. Java 8 supports **TLSv1.3** from **JDK 11** onward, but you can still ensure TLSv1.3 is prioritized over TLSv1.2 by modifying the configuration.
+
+### Steps for disabling TLSv1.2 and enabling TLSv1.3 and higher
+
+#### **1. Modify `java.security` Configuration File (JVM-Wide)**
+
+You can configure the `java.security` file to disable TLSv1.2 and enable TLSv1.3 by following these steps:
+
+1. **Locate the `java.security` file**:
+   - On Linux/macOS: The file is located in the `lib/security` folder of your JDK installation. The path might look like this:
+     ```bash
+     /lib/security/java.security
+     ```
+   - On Windows, the path might look like:
+     ```bash
+     C:\Program Files\Java\jdk1.x.x_xx\jre\lib\security\java.security
+     ```
+
+2. **Edit the `java.security` file**:
+   Open the `java.security` file in a text editor with administrative or root privileges.
+
+3. **Disable TLSv1.2 and Enable TLSv1.3**:
+   Find the `jdk.tls.disabledAlgorithms` property and modify it to disable **TLSv1.2**. Ensure **TLSv1.3** is enabled. You can do it by setting the following:
+   ```properties
+   jdk.tls.disabledAlgorithms=TLSv1.2, SSLv3, TLSv1, TLSv1.1
+   ```
+
+   This line disables **TLSv1.2**, **SSLv3**, **TLSv1**, and **TLSv1.1**, while **TLSv1.3** remains enabled by default (since it's supported from Java 11 onward).
+
+4. **Save and close the file**.
+
+5. **Restart your Java application**: 
+   Any Java application running on the JVM will now follow these security settings.
+
+#### **2. Set the System Property via Command Line (Optional)**
+
+If you prefer to set the protocol configurations dynamically without modifying the `java.security` file, you can use the system property `https.protocols`.
+
+To allow only **TLSv1.3** and higher, set this property on the Java command line:
+
+```bash
+-Dhttps.protocols=TLSv1.3
+```
+
+#### **3. Configure TLS Protocols Programmatically (Optional)**
+
+You can also control the protocols programmatically using the `SSLContext` class. This is useful if you need to ensure your application is only using **TLSv1.3** and onward (while programmatically disabling TLSv1.2).
+
+Here’s a Java code example that forces **TLSv1.3** (and above) and disables TLSv1.2:
+
+```java
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
+
+public class DisableTLSv12EnableTLSv13 {
+    public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException {
+        // Set the https.protocols system property
+        System.setProperty("https.protocols", "TLSv1.3");
+
+        // Create an SSLContext for TLSv1.3
+        SSLContext context = SSLContext.getInstance("TLSv1.3");
+
+        // Initialize the SSLContext (no KeyManagers or TrustManagers, defaults)
+        context.init(null, null, new java.security.SecureRandom());
+
+        // Set the default SSLContext to the one created for TLSv1.3
+        SSLContext.setDefault(context);
+
+        System.out.println("TLSv1.3 is now enabled and TLSv1.2 is disabled.");
+    }
+}
+```
+
+In the code above:
+- The `SSLContext.getInstance("TLSv1.3")` ensures that the application will only use **TLSv1.3**.
+- By setting `https.protocols` to **TLSv1.3**, it ensures that only **TLSv1.3** is used for HTTPS connections.
+
+#### **4. JVM Version Considerations (TLSv1.3 Support)**
+
+If you are using **Java 8** (which does not natively support TLSv1.3), you'll need to upgrade to **Java 11** or higher because **Java 8** does not support **TLSv1.3** out of the box. TLSv1.3 support was introduced in **Java 11**.
+
+- **Java 8**: By default, it supports up to **TLSv1.2**.
+- **Java 11 and above**: These versions support **TLSv1.3**.
+
+If you must use **Java 8** and still want to enable **TLSv1.3**, you would need to backport TLSv1.3 support (such as using the `TLSv1.3` extension or other security providers, but this is not recommended and might be complex).
+
+#### **5. Verifying the Configuration**
+
+Once the configuration changes are applied, verify that **TLSv1.3** is being used and **TLSv1.2** is not:
+
+- **Testing with a Java application**: You can create a simple client that connects to a server to ensure only **TLSv1.3** is being used.
+- **Using `openssl`**: If you're testing with a server, use `openssl` to confirm the supported protocols. Example:
+  ```bash
+  openssl s_client -connect yourserver:443 -tls1_3
+  ```
+
+### Summary
+
+To disable **TLSv1.2** and enable **TLSv1.3** in Java:
+1. Modify the `java.security` configuration file to disable TLSv1.2.
+2. Optionally, set the system property `-Dhttps.protocols=TLSv1.3` to limit the protocols.
+3. For Java 8, consider upgrading to Java 11+ for native **TLSv1.3** support.
+4. Ensure your application only uses **TLSv1.3** through the programmatic approach or other configurations.
+
+These steps will ensure that your Java application only uses **TLSv1.3** and above while disabling older protocols like **TLSv1.2**.
+
+==========
+
+To remove or disable TLSv1.2 from Java 8 (Java 8, especially for security purposes), you need to modify the Java configuration. Here's how you can do it:
+
+### 1. **Update the `java.security` file** (Recommended Method):
+Java 8 allows you to configure the enabled protocols by editing the `java.security` file. This will disable the use of TLSv1.2 if you don't want it available.
+
+#### Steps:
+1. **Locate the `java.security` file**:
+   - On Linux/macOS: `/lib/security/java.security` (within your JDK installation folder)
+   - On Windows: `C:\Program Files\Java\jdk1.x.x_xx\jre\lib\security\java.security`
+
+2. **Edit the `java.security` file**:
+   Open the `java.security` file in a text editor with administrative or root privileges.
+
+3. **Locate the `jdk.tls.disabledAlgorithms` property**:
+   Look for the line containing `jdk.tls.disabledAlgorithms`. If it’s not there, you can add it.
+
+4. **Disable TLSv1.2**:
+   Modify the `jdk.tls.disabledAlgorithms` property to disable TLSv1.2. For example, add the following line to the file:
+
+   ```properties
+   jdk.tls.disabledAlgorithms=TLSv1.2
+   ```
+
+   Or, if the `jdk.tls.disabledAlgorithms` property already exists, add `TLSv1.2` to the list of disabled algorithms. Make sure to separate different algorithms by commas.
+
+   **Example**:
+   ```properties
+   jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, TLSv1.2
+   ```
+
+5. **Save and close the file**.
+
+6. **Restart Java application**:
+   After making these changes, you will need to restart any Java application for the changes to take effect.
+
+### 2. **Disable via System Property** (Runtime Configuration):
+If you don't want to edit the `java.security` file, you can set a system property to disable TLSv1.2. This can be done when running the Java application.
+
+#### Steps:
+1. **Add the following system property when running your Java application**:
+   ```bash
+   -Dhttps.protocols=TLSv1,TLSv1.1
+   ```
+
+   This ensures that only TLSv1 and TLSv1.1 are enabled, excluding TLSv1.2.
+
+   **Example Command**:
+   ```bash
+   java -Dhttps.protocols=TLSv1,TLSv1.1 -jar your-application.jar
+   ```
+
+### 3. **Programmatically Disable TLSv1.2 in Java Code**:
+If you need to disable TLSv1.2 programmatically within your Java application (e.g., within the main method), you can do so using the `SSLContext` class.
+
+#### Example Code:
+```java
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
+
+public class DisableTLSv12 {
+    public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException {
+        // Disable TLSv1.2
+        System.setProperty("https.protocols", "TLSv1,TLSv1.1");
+
+        // Optionally set the default SSLContext
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(null, null, new java.security.SecureRandom());
+        SSLContext.setDefault(context);
+        
+        // Now your application will use the specified protocols.
+    }
+}
+```
+
+### 4. **Considerations**:
+- **Security Implications**: TLSv1.2 is generally considered a secure protocol. Disabling it may lead to vulnerabilities, so it's crucial to be aware of the security context in which you're making these changes. If you're disabling TLSv1.2, make sure that the remaining protocols (like TLSv1 and TLSv1.1) are still sufficient for your needs, or consider upgrading your system to a newer TLS protocol version (e.g., TLSv1.3) instead of disabling TLSv1.2.
+  
+### Conclusion:
+To remove or disable TLSv1.2 in Java 8, you can modify the `java.security` file, set the system property at runtime, or configure it programmatically. Make sure to test your application thoroughly after making these changes to ensure there are no unintended side effects.
+
+tlsv1.3======================
+
+**TLSv1.3** support in Java is available starting from **Java 11**. Here's an overview of the Java versions that support **TLSv1.3**:
+
+### Java Versions Supporting TLSv1.3:
+- **Java 11** (and later) supports **TLSv1.3** natively.
+- **Java 8** and earlier versions do not support **TLSv1.3**. To use TLSv1.3 with Java 8, you would need to either backport TLSv1.3 support using third-party libraries or upgrade to a newer Java version, like Java 11 or higher.
+
+### Key Details:
+- **Java 11 and later**: **TLSv1.3** is fully supported and enabled by default. Java 11 includes support for both **TLSv1.2** and **TLSv1.3**. To use **TLSv1.3**, you simply need to ensure it is enabled and that your application or server is using an appropriate protocol.
+  
+- **Java 8**: **TLSv1.3** is not supported natively in **Java 8**. If you're using **Java 8** and need to work with **TLSv1.3**, you'll need to upgrade to **Java 11** or later for native support, or you could use third-party libraries or security providers, though this can be complex and not recommended for production systems.
+
+### How to Check TLS Version in Java:
+To confirm which TLS versions are supported and being used in a Java application, you can programmatically check the available protocols:
+
+#### Example Java Code to Check Supported TLS Versions:
+```java
+import javax.net.ssl.SSLContext;
+
+public class CheckTLSVersion {
+    public static void main(String[] args) {
+        try {
+            SSLContext context = SSLContext.getDefault();
+            String[] supportedProtocols = context.getSupportedSSLParameters().getProtocols();
+            
+            System.out.println("Supported TLS protocols:");
+            for (String protocol : supportedProtocols) {
+                System.out.println(protocol);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+This code will print the list of supported protocols for the default `SSLContext`. You can use this to verify if **TLSv1.3** is supported in your Java version.
+
+### Conclusion:
+- **Java 11** and later: Full support for **TLSv1.3**.
+- **Java 8**: Does not support **TLSv1.3** natively (you need to upgrade to Java 11 or higher).
+
+If you're working with **Java 8**, upgrading to **Java 11** or higher is the best way to ensure **TLSv1.3** support.
+
+
+---------
+
+Java 8 does **not** natively support **TLSv1.3** because **TLSv1.3** was introduced in **Java 11**. However, if you're using **Java 8** and want to use **TLSv1.3**, you have a few options, though they come with limitations or additional complexity.
+
+### Options for Using TLSv1.3 with Java 8:
+
+1. **Upgrade to Java 11 or later (Recommended)**:
+   - The simplest and most effective solution is to **upgrade to Java 11** or a later version (e.g., Java 17, Java 20), which provides **native support for TLSv1.3**. Java 11 has TLSv1.3 support out of the box, and you won’t need to worry about workarounds or additional dependencies.
+
+2. **Use a Third-Party Security Provider** (Not Recommended for Production):
+   - If upgrading is not an option and you must continue using **Java 8**, one option is to use third-party security providers that backport **TLSv1.3** to older versions of Java. For example, you could use **Bouncy Castle**, which provides a **TLSv1.3** implementation for Java 8. However, this approach is complex, requires additional configuration, and may not be fully compatible with all Java 8 features.
+   
+   - **Steps**:
+     1. Download the **Bouncy Castle** provider jar (https://www.bouncycastle.org).
+     2. Register the provider in your **java.security** configuration.
+     3. Modify your SSLContext to use the **Bouncy Castle** provider, which would enable **TLSv1.3** support.
+   
+   However, this is not recommended for production environments as it may be unreliable, lack full support for newer security protocols, and require additional maintenance.
+
+3. **Custom SSL/TLS Implementation**:
+   - Another, but complex, option is to implement **TLSv1.3** support manually in your application by incorporating external libraries or integrating **OpenSSL** with Java through JNI (Java Native Interface). This approach requires deep technical expertise and is generally only used in specific, highly customized environments.
+
+### Why Upgrade to Java 11 or Later is Best:
+- **Java 11** and later are officially supported with full **TLSv1.3** functionality. By upgrading, you get improved performance, security, and new features, including proper support for modern cryptographic standards like **TLSv1.3**.
+- **Java 8** is an older version, and it's no longer actively supported in many cases, making it a less secure and harder-to-maintain option as security standards evolve.
+
+### How to Enable TLSv1.3 in Java 11 and Later:
+Once you upgrade to **Java 11** or higher, enabling **TLSv1.3** is very straightforward because it’s enabled by default.
+
+#### Example to Enable TLSv1.3:
+In **Java 11+**, TLSv1.3 is enabled by default, so you don’t need to do anything special unless you explicitly disable it.
+
+1. **To check or force TLSv1.3** in your Java application, you can set the following system property:
+   ```bash
+   -Dhttps.protocols=TLSv1.3
+   ```
+
+2. **Forcing TLSv1.3 in Java Code**:
+   If you want to programmatically ensure your application uses **TLSv1.3**, you can set the system property at runtime or configure the `SSLContext` as follows:
+   
+   ```java
+   import javax.net.ssl.SSLContext;
+
+   public class TLS13Example {
+       public static void main(String[] args) throws Exception {
+           // Set the system property to use TLSv1.3
+           System.setProperty("https.protocols", "TLSv1.3");
+
+           // Ensure TLSv1.3 is used for SSLContext
+           SSLContext context = SSLContext.getInstance("TLSv1.3");
+           context.init(null, null, new java.security.SecureRandom());
+           SSLContext.setDefault(context);
+
+           System.out.println("TLSv1.3 is now enabled.");
+       }
+   }
+   ```
+
+### Conclusion:
+- **Java 8** does not natively support **TLSv1.3**. If you need **TLSv1.3**, upgrading to **Java 11** or later is highly recommended.
+- **Java 8** users may attempt to use **third-party security providers** (like **Bouncy Castle**) or **custom implementations** to enable **TLSv1.3**, but this approach is complex and not ideal for production environments.
+- The best approach is to **upgrade** to a newer version of Java (Java 11 or higher), where **TLSv1.3** is fully supported and enabled by default.
