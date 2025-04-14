@@ -1,0 +1,23 @@
+To list all cipher suites in your Spring Boot application logs using Java 8, you can utilize the Security class to retrieve the available cipher algorithms and log them. Here's a code snippet to help you:
+import java.security.Provider;
+import java.security.Security;
+
+public class CipherSuiteLogger {
+    public static void main(String[] args) {
+        for (Provider provider : Security.getProviders()) {
+            provider.getServices().stream()
+                .filter(service -> "Cipher".equals(service.getType()))
+                .map(Provider.Service::getAlgorithm)
+                .forEach(System.out::println);
+        }
+    }
+}
+
+
+We can also configure Java Logging to capture SSL debugging information. By creating a logging.properties file and placing it in the classpath, we can customize the logging behavior.
+
+Let’s add the following lines to the logging.properties file to enable logging:
+
+java.util.logging.ConsoleHandler.level=ALL
+java.net.ssl.handlers=java.util.logging.ConsoleHandler
+javax.net.ssl.level=ALL
