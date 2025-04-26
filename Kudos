@@ -212,3 +212,107 @@ public WebServerFactoryCustomizer<TomcatServletWebServerFactory> sslCustomizer()
         );
     });
 }
+========================================================
+
+In Java 8 Spring Boot microservices, to exclude (disable) specific TLS cipher suites, you must explicitly configure only the allowed cipher suites — because Java 8 and Spring Boot do not support blacklist-style exclusion directly.
+
+✅ Effective Way to Exclude a Cipher Suite
+🎯 Let’s say you want to disable:
+text
+Copy
+Edit
+TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+You do this by not including it in your server.ssl.ciphers list.
+
+🔧 In application.properties:
+properties
+Copy
+Edit
+server.port=8443
+server.ssl.enabled=true
+server.ssl.protocol=TLS
+server.ssl.key-store=classpath:keystore.p12
+server.ssl.key-store-password=changeit
+server.ssl.key-store-type=PKCS12
+server.ssl.enabled-protocols=TLSv1.2
+server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+This excludes all other ciphers, including the one you want to disable.
+
+✅ This is the official and correct method to exclude specific cipher suites in Java 8 + Spring Boot.
+
+⚠️ What You Cannot Do
+You cannot do something like:
+
+properties
+Copy
+Edit
+server.ssl.excluded-ciphers=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+This property does not exist in Spring Boot or Java 8.
+
+There is no JVM-wide "blacklist" property for TLS ciphers unless you edit java.security (which we are avoiding).
+
+🧪 How to Test That It's Excluded
+Use openssl to try connecting with the excluded cipher:
+
+bash
+Copy
+Edit
+openssl s_client -connect localhost:8443 -cipher 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
+You should see:
+
+text
+Copy
+Edit
+CONNECTED(00000003)
+140735249105088:error:14094410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:ssl/record/rec_layer_s3.c:1544:SSL alert number 40
+Would you like a working example project with a keystore you can test this on?
+
+
+
+You said:
+openssl s_client -connect localhost:8443
+
+ChatGPT said:
+Running the command:
+
+bash
+Copy
+Edit
+openssl s_client -connect localhost:8443
+will try to establish an SSL/TLS connection to your Spring Boot app on port 8443. It shows details like:
+
+The negotiated TLS version
+
+The cipher suite used
+
+The certificate presented
+
+Any errors in the handshake
+
+🔍 Sample Successful Output
+text
+Copy
+Edit
+CONNECTED(00000003)
+...
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+...
+This tells you your app is serving TLS 1.2 and using the expected cipher suite.
+
+🛑 To Test Cipher Exclusion
+If you've excluded a specific cipher (e.g., TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256), try forcing it:
+
+bash
+Copy
+Edit
+openssl s_client -connect localhost:8443 -cipher 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
+If it's truly excluded, you'll see:
+
+text
+Copy
+Edit
+CONNECTED(00000003)
+140735249105088:error:14094410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure
+This means your Spring Boot config is correctly blocking that cipher suite.
