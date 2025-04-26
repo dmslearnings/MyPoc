@@ -134,3 +134,81 @@ java \
   -Dserver.ssl.enabled-protocols=TLSv1.2 \
   -Dserver.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 \
   -jar your-app.jar
+
+
+
+----------
+Spring Boot Needs Embedded SSL Setup
+The server.ssl.* settings only apply if you're running your app with an embedded servlet container (like Tomcat, Jetty, or Undertow) and have SSL enabled with a valid keystore.
+
+You need to specify:
+-Dserver.ssl.enabled=true \
+-Dserver.ssl.key-store=classpath:keystore.p12 \
+-Dserver.ssl.key-store-password=changeit \
+-Dserver.ssl.key-store-type=PKCS12 \
+-Dserver.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 \
+-Dserver.ssl.enabled-protocols=TLSv1.2
+
+
+-----
+You can configure the embedded server programmatically as a fallback:
+@Bean
+public WebServerFactoryCustomizer<TomcatServletWebServerFactory> sslCustomizer() {
+    return factory -> factory.addConnectorCustomizers(connector -> {
+        connector.setProperty("ciphers", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
+        connector.setProperty("sslEnabledProtocols", "TLSv1.2");
+    });
+}
+
+----------------
+
+Use application.properties or -D Flags
+✔️ In application.properties:
+properties
+Copy
+Edit
+server.ssl.enabled=true
+server.ssl.key-store=classpath:keystore.p12
+server.ssl.key-store-password=changeit
+server.ssl.key-store-type=PKCS12
+server.ssl.protocol=TLS
+server.ssl.enabled-protocols=TLSv1.2
+server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+✔️ Or via command line:
+bash
+Copy
+Edit
+java \
+  -Dserver.ssl.enabled=true \
+  -Dserver.ssl.key-store=classpath:keystore.p12 \
+  -Dserver.ssl.key-store-password=changeit \
+  -Dserver.ssl.key-store-type=PKCS12 \
+  -Dserver.ssl.protocol=TLS \
+  -Dserver.ssl.enabled-protocols=TLSv1.2 \
+  -Dserver.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 \
+  -jar your-app.jar
+✅ 3. Verify What's Enabled
+To make sure the insecure ciphers are disabled, use:
+
+bash
+Copy
+Edit
+openssl s_client -connect localhost:8443 -cipher 'ALL'
+Then try connecting using a blocklisted cipher like TLS_RSA_WITH_AES_128_CBC_SHA. If your app is configured correctly, the connection should fail.
+
+✅ 4. Optional Programmatic Control
+For complete control (e.g., if you're using embedded Tomcat), do it in code:
+
+java
+Copy
+Edit
+@Bean
+public WebServerFactoryCustomizer<TomcatServletWebServerFactory> sslCustomizer() {
+    return factory -> factory.addConnectorCustomizers(connector -> {
+        connector.setProperty("sslEnabledProtocols", "TLSv1.2");
+        connector.setProperty("ciphers",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        );
+    });
+}
