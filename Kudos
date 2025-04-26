@@ -92,3 +92,32 @@ These kudos words highlight the qualities of leadership, guidance, and decision-
 
 "Couldn't Ask for a Better Friend and Teammate!"
 "I appreciate everything you do for the team and for me personally. You’re a fantastic teammate and an even better friend – thanks for everything!"
+
+=====================================
+Programmatically via SSLContext Configuration
+If you're setting up your own SSLContext (for example, in a Spring Boot microservice or custom HTTP client/server), you can specify which cipher suites are allowed.
+SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+sslContext.init(null, null, new SecureRandom());
+
+SSLEngine engine = sslContext.createSSLEngine();
+engine.setEnabledCipherSuites(new String[]{
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", // allow only specific suites
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+});
+------------------
+Using JVM System Properties (Non-java.security method)
+You can set system properties when launching your application:
+
+-Dhttps.cipherSuites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+--------------------
+ For Embedded Web Servers (e.g., Spring Boot with Tomcat or Jetty)
+If you're using Spring Boot and want to control ciphers at the embedded server level:
+
+application.properties:
+
+
+server.ssl.enabled-protocols=TLSv1.2
+server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+----------------
+
