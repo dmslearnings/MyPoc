@@ -1,0 +1,99 @@
+
+---
+
+### ✅ 1. **Spring Boot Configuration (Embedded Tomcat)**
+
+If you're using Spring Boot with **embedded Tomcat**, you can configure allowed ciphers directly in `application.properties` or `application.yml`:
+
+#### 🔧 Example (`application.properties`):
+
+```properties
+server.port=8443
+server.ssl.enabled=true
+server.ssl.protocol=TLS
+server.ssl.key-store=classpath:keystore.p12
+server.ssl.key-store-password=changeit
+server.ssl.key-store-type=PKCS12
+
+# ONLY allow these ciphers (others implicitly disabled)
+server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+```
+
+If a cipher is **not listed**, it is effectively **disabled**.
+
+---
+
+### ✅ 2. **Set via Java System Properties (Command Line)**
+
+If you can't or don't want to set it in code/config, you can pass system properties when starting the app:
+
+```bash
+-Dserver.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+```
+
+> Note: This works in Spring Boot, **not a generic Java 8 app**, unless you explicitly handle these properties in your code.
+
+---
+
+### ✅ 3. **Custom SSL Configuration in Java Code**
+
+If you're using a custom server (like Jetty, Undertow, or Netty), or want full control, set ciphers programmatically:
+
+```java
+@Bean
+public TomcatServletWebServerFactory servletContainer() {
+    TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+    factory.addConnectorCustomizers(connector -> {
+        connector.setSecure(true);
+        connector.setScheme("https");
+        connector.setProperty("sslProtocol", "TLS");
+        connector.setProperty("ciphers", 
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+    });
+    return factory;
+}
+```
+
+This approach gives you **precise control** and works well in Spring Boot with embedded Tomcat.
+
+---
+
+### ✅ 4. **Use `SSLContext` in Pure Java (for custom apps)**
+
+If not using Spring Boot, you can create a custom `SSLContext` and set the ciphers like this:
+
+```java
+SSLContext context = SSLContext.getInstance("TLS");
+context.init(...); // your KeyManager/TrustManager
+
+SSLSocketFactory factory = context.getSocketFactory();
+SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
+socket.setEnabledCipherSuites(new String[] {
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+});
+```
+
+---
+
+### 🧪 Test It
+
+You can use `openssl` to verify which ciphers your server allows:
+
+```bash
+openssl s_client -connect localhost:8443 -cipher 'ALL'
+```
+
+---
+
+### 🚫 Want to Block Specific Cipher(s)?
+
+Java 8 **only allows enabling**, not direct *disabling*, of specific ciphers unless you use `java.security`.
+
+To **block** weak ciphers like `TLS_RSA_WITH_AES_128_CBC_SHA`:
+
+- **Do not list them** in `server.ssl.ciphers`
+- That effectively **prohibits** them
+
+
+
