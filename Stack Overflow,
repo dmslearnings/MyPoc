@@ -1,0 +1,47 @@
+Post:
+
+Hi Stack Overflow,
+
+I’m working on a Spring Boot microservice running on Java 8, and I need to disable specific TLS 1.2 cipher suites due to security concerns. However, I want to avoid editing the java.security file or making changes that would impact the global JVM settings.
+
+Problem:
+I need to exclude certain TLS 1.2 cipher suites, specifically TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, while keeping other secure ciphers enabled.
+
+What I’ve Tried:
+I tried using server.ssl.ciphers in the application.properties file to specify the ciphers I want to keep, but it doesn’t seem to work in Java 8.
+
+I also attempted to set JVM arguments like -Dhttps.cipherSuites but couldn’t see any impact on the allowed ciphers.
+
+What I’m Looking For:
+A Spring Boot-specific solution (I’m using Spring Boot 2.x) to disable a specific TLS 1.2 cipher suite without modifying the global java.security file.
+
+Ideally, a programmatic or configuration-based approach that can be used in a Spring Boot microservice running on Java 8.
+
+Any help or suggestions on how to achieve this would be greatly appreciated!
+
+Thanks in advance!
+
+Tags:
+java-8
+
+spring-boot
+
+tls
+
+cipher-suite
+
+security
+
+microservices
+
+Explanation:
+
+Title: Clearly describes the problem: disabling a TLS cipher suite in Java 8 microservices without changing java.security.
+
+Post: Detailed explanation of the issue you're facing, including what you’ve already tried, so people can avoid suggesting solutions you’ve already explored.
+
+Tags: Helps categorize the question effectively for others who may have similar issues.
+
+This should get attention from experts in the Spring Boot and Java 8 community who can offer targeted solutions! Let me know if you'd like any adjustments or further details!
+
+
