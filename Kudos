@@ -121,3 +121,16 @@ server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_
 
 ----------------
 
+server.ssl.enabled=true
+server.ssl.protocol=TLS
+server.ssl.enabled-protocols=TLSv1.2
+# List only the ciphers you want to keep, excluding the one you want to disable
+server.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+
+java \
+  -Dserver.ssl.enabled=true \
+  -Dserver.ssl.protocol=TLS \
+  -Dserver.ssl.enabled-protocols=TLSv1.2 \
+  -Dserver.ssl.ciphers=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 \
+  -jar your-app.jar
