@@ -1,0 +1,38 @@
+I wanted to provide you with an update on the OC-6 MER implementation.
+
+As part of the recent changes, the exclusion cipher list has been revised to align with updated security standards. The following ciphers have been added to the exclusion list:
+
+aaaaa
+
+bbb
+
+cccc
+
+Any SSLv3-based or export-grade ciphers
+
+These changes aim to strengthen encryption compliance and reduce vulnerabilities in accordance with our internal policy and industry best practices.
+
+The updated configuration has been successfully deployed on the UAT environment as of [Insert Deployment Date]. Initial testing has confirmed that the changes are working as expected, with no observed disruptions to existing services or client interactions.
+
+Please let me know if you need a detailed report or would like a walkthrough of the updates.
+
+Best regards,
+
+
+I would like to share a quick update regarding the OC-6 MER activity.
+
+During the recent clinical call, we finalized the new exclusion cipher list to enhance system security and ensure compliance with updated encryption standards. The ciphers identified for exclusion are as follows:
+
+aa
+
+bb
+
+cc
+
+All SSLv3-based and export-grade ciphers
+
+These changes were agreed upon by the clinical and security teams to mitigate vulnerabilities associated with legacy encryption protocols.
+
+Following the call, the updated configuration was successfully deployed in the UAT environment on [Insert Deployment Date]. Preliminary validation has confirmed that services are operating as expected, with no issues observed post-deployment.
+
+Please let me know if you would like a summary of the call discussion or technical documentation for the cipher updates.
