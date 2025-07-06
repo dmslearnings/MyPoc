@@ -1,0 +1,48 @@
+Full ML Training Script: Train & Save Alert Detection Model
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+import joblib
+
+# === Step 1: Load Training Data ===
+# Your CSV should have features like 'severity', 'action', 'ip', and a target label column 'label'
+# Example: label = 1 for restricted entry, 0 for normal
+df = pd.read_csv("training_data.csv")
+
+# === Step 2: Feature Engineering ===
+df['action_length'] = df['action'].apply(len)  # Add length of action string as a feature
+# You can add more features like keyword flags or frequency patterns
+
+# Select features and labels
+X = df[['severity', 'action_length']]
+y = df['label']
+
+# === Step 3: Train/Test Split ===
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# === Step 4: Train the Model ===
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# === Step 5: Evaluate ===
+y_pred = model.predict(X_test)
+print("🔍 Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\n📊 Classification Report:\n", classification_report(y_test, y_pred))
+
+# === Step 6: Save the Model ===
+joblib.dump(model, "ml_model.pkl")
+print("✅ Model saved successfully as 'ml_model.pkl'")
+
+
+
+🧠 Helpful Tips
+- Make sure training_data.csv has a balanced number of restricted (label=1) and normal (label=0) samples.
+- You can improve accuracy by using NLP features, IP reputation scores, or historical context.
+- To test the saved model:
+model = joblib.load("ml_model.pkl")
+preds = model.predict([[3, 25]])  # Example: severity=3, action_length=25
+
+
+
+Would you like help enhancing this with text embeddings, anomaly detection, or real-time streaming? We can take it to the next level if you're ready. 😄

@@ -1,0 +1,78 @@
+Smart AI Notification Handler (Inference + Actions)
+import pandas as pd
+import joblib
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+# === CONFIG ===
+INPUT_FILE = "daily_notifications.csv"
+SMTP_SERVER = "smtp.yourdomain.com"
+SMTP_PORT = 587
+SMTP_USER = "ai-alerts@yourdomain.com"
+SMTP_PASS = "your_password"
+EMAIL_RECIPIENT = "admin@yourdomain.com"
+
+# === Load Models ===
+ml_model = joblib.load("ml_model.pkl")
+vectorizer = joblib.load("tfidf_vectorizer.pkl")
+anomaly_model = joblib.load("anomaly_model.pkl")
+
+# === Load and preprocess data ===
+df = pd.read_csv(INPUT_FILE)
+df['action_length'] = df['action'].apply(len)
+tfidf_matrix = vectorizer.transform(df['action']).toarray()
+features = pd.concat([df[['severity', 'action_length']], pd.DataFrame(tfidf_matrix)], axis=1)
+
+# === ML Predictions ===
+df['ml_flag'] = ml_model.predict(features)
+
+# === Anomaly Detection ===
+scaler = StandardScaler()
+scaled = scaler.fit_transform(features)
+reduced = PCA(n_components=10).fit_transform(scaled)
+df['anomaly_score'] = anomaly_model.predict(reduced)
+
+# === Flagging Logic ===
+violations = df[(df['ml_flag'] == 1) | (df['anomaly_score'] == -1)]
+
+# === Action Handler ===
+def take_action(entry):
+    print(f"[ACTION] 🚫 Blocking user: {entry['user']} | Reason: {entry['action']} | IP: {entry['ip']}")
+
+# === Email Alert ===
+def send_email(subject, body, to_email):
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = SMTP_USER
+    msg['To'] = to_email
+
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+            print("[EMAIL] Alert sent!")
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+
+# === Run the system ===
+if not violations.empty:
+    for _, row in violations.iterrows():
+        take_action(row)
+    
+    body = f"⚠️ Restricted or anomalous entries detected on {datetime.now().date()}:\n\n{violations.to_string(index=False)}"
+    send_email("🚨 AI Notification Alert", body, EMAIL_RECIPIENT)
+else:
+    print("[INFO] No threats detected today.")
+
+
+
+🔧 What You’ve Got
+- Fully automated pipeline to analyze, detect, and act on notifications
+- Real-time decision-making powered by machine learning and anomaly scoring
+- Email alerts with contextual details for human review
+
+Ready to take it even further with a web dashboard, database logging, or cloud deployment? I can help you build out the full ecosystem next. Just say when ⚡

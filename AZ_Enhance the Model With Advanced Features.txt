@@ -1,0 +1,56 @@
+Phase 2: Enhance the Model With Advanced Features
+We'll extend your model pipeline with:
+- Text Feature Extraction: Using NLP to analyze action descriptions
+- IP Risk Scoring (Optional): Tag high-risk IPs
+- Anomaly Detection: Add a model that flags outliers based on behavior
+- Model Evaluation & Export: Build for accuracy and reliability
+
+
+import pandas as pd
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.svm import OneClassSVM
+
+# === Load and prepare data ===
+df = pd.read_csv("training_data.csv")
+df['action_length'] = df['action'].apply(len)
+
+# === Text processing ===
+vectorizer = TfidfVectorizer(max_features=50)
+action_tfidf = vectorizer.fit_transform(df['action']).toarray()
+action_tfidf_df = pd.DataFrame(action_tfidf, columns=vectorizer.get_feature_names_out())
+
+# === Combine features ===
+features = pd.concat([df[['severity', 'action_length']], action_tfidf_df], axis=1)
+labels = df['label']  # 0: safe, 1: restricted
+
+# === Supervised model ===
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+clf = RandomForestClassifier(n_estimators=100, random_state=42)
+clf.fit(X_train, y_train)
+
+# === Evaluate model ===
+y_pred = clf.predict(X_test)
+print("🔍 Classification Report:\n", classification_report(y_test, y_pred))
+
+# === Save model and vectorizer ===
+joblib.dump(clf, "ml_model.pkl")
+joblib.dump(vectorizer, "tfidf_vectorizer.pkl")
+print("✅ Models saved: 'ml_model.pkl' and 'tfidf_vectorizer.pkl'")
+
+# === Anomaly detection (optional module) ===
+scaler = StandardScaler()
+scaled = scaler.fit_transform(features)
+
+pca = PCA(n_components=10)
+reduced = pca.fit_transform(scaled)
+
+anomaly_model = OneClassSVM(gamma='auto').fit(reduced)
+joblib.dump(anomaly_model, "anomaly_model.pkl")
+print("🚨 Anomaly detection model saved as 'anomaly_model.pkl'")

@@ -1,0 +1,82 @@
+import pandas as pd
+import joblib
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# === CONFIG ===
+INPUT_FILE = "daily_alerts.csv"
+SMTP_SERVER = "smtp.yourdomain.com"
+SMTP_PORT = 587
+SMTP_USER = "alerts@yourdomain.com"
+SMTP_PASS = "your_password"
+EMAIL_RECIPIENTS = ["team@yourdomain.com"]
+
+# === Load Models ===
+ml_model = joblib.load("ml_model.pkl")
+vectorizer = joblib.load("tfidf_vectorizer.pkl")
+anomaly_model = joblib.load("anomaly_model.pkl")
+
+# === Load and preprocess data ===
+df = pd.read_csv(INPUT_FILE)
+df['action_length'] = df['action'].apply(len)
+tfidf_matrix = vectorizer.transform(df['action']).toarray()
+features = pd.concat([df[['severity', 'action_length']], pd.DataFrame(tfidf_matrix)], axis=1)
+
+# === ML Predictions ===
+df['ml_flag'] = ml_model.predict(features)
+
+# === Anomaly Detection ===
+scaled = StandardScaler().fit_transform(features)
+reduced = PCA(n_components=10).fit_transform(scaled)
+df['anomaly_flag'] = anomaly_model.predict(reduced)
+
+# === Flagged Alerts ===
+flagged = df[(df['ml_flag'] == 1) | (df['anomaly_flag'] == -1)]
+
+# === Summary Generation ===
+summary = f"""
+📊 Daily Alert Summary - {datetime.now().strftime('%Y-%m-%d')}
+
+Total Alerts Reviewed: {len(df)}
+Flagged by ML Model: {df['ml_flag'].sum()}
+Flagged as Anomalies: {(df['anomaly_flag'] == -1).sum()}
+Critical Entries:
+{flagged[['timestamp', 'user', 'action', 'ip']].to_string(index=False)}
+"""
+
+# === Email Dispatcher ===
+def send_email(subject, body, recipients):
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = SMTP_USER
+    msg['To'] = ", ".join(recipients)
+
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+            print("✅ Email sent successfully.")
+    except Exception as e:
+        print(f"❌ Email failed: {e}")
+
+# === Run System ===
+send_email("🚨 Daily AI Alert Summary", summary, EMAIL_RECIPIENTS)
+
+=============
+
+System Overview
+| Component | Function | 
+| Data Ingestion | Reads daily alert files (CSV, JSON, etc.) | 
+| Preprocessing | Cleans and transforms data for analysis | 
+| ML Classifier | Flags critical or false alerts using a trained model | 
+| Anomaly Detector | Identifies unusual patterns or outliers | 
+| Summary Generator | Creates daily digest with stats and flagged entries | 
+| Email Dispatcher | Sends summary to team with alert details | 
+
+
+
+
